@@ -8,9 +8,11 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.markdown import Markdown
+from rich.table import Table
 
 from dataset_doctor.core.analyzer import analyze
 from dataset_doctor.core.cleaner import clean
+from dataset_doctor.core.viewer import display_data
 
 app = typer.Typer(
     name="dataset-doctor",
@@ -18,6 +20,19 @@ app = typer.Typer(
     add_completion=False,
 )
 console = Console()
+
+
+def _print_dataframe(df) -> None:
+    """Render a DataFrame in a compact rich table."""
+    table = Table(show_header=True, header_style="bold cyan")
+    table.add_column("index", justify="right", style="dim")
+    for col in df.columns:
+        table.add_column(str(col))
+
+    for idx, row in df.iterrows():
+        table.add_row(str(idx), *[str(value) for value in row.tolist()])
+
+    console.print(table)
 
 
 @app.command()
@@ -56,6 +71,63 @@ def clean_cmd(
         console.print(f"[green]✔[/green] Saved to {output}")
     else:
         console.print("[dim]Tip: use --output cleaned.csv to save the result.[/dim]")
+
+
+def _display_impl(
+    file: Path,
+    rows: int,
+    tail: bool,
+    columns: Optional[str],
+    all_rows: bool,
+) -> None:
+    column_list = [col.strip() for col in columns.split(",")] if columns else None
+    if column_list:
+        column_list = [col for col in column_list if col]
+
+    df = display_data(
+        str(file),
+        rows=rows,
+        tail=tail,
+        columns=column_list,
+        all_rows=all_rows,
+    )
+
+    console.print(f"[green]✔[/green] Displaying {len(df)} rows x {len(df.columns)} columns")
+    _print_dataframe(df)
+
+
+@app.command(name="display")
+def display_cmd(
+    file: Path = typer.Argument(..., help="Path to the dataset file (CSV)."),
+    rows: int = typer.Option(10, "--rows", "-r", help="Number of rows to display."),
+    tail: bool = typer.Option(False, "--tail", help="Display last N rows instead of first N rows."),
+    columns: Optional[str] = typer.Option(
+        None,
+        "--columns",
+        "-c",
+        help="Comma-separated columns to display (e.g. age,salary,city).",
+    ),
+    all_rows: bool = typer.Option(False, "--all", help="Display all rows."),
+) -> None:
+    """Display dataset rows and columns in the terminal."""
+    _display_impl(file, rows, tail, columns, all_rows)
+
+
+@app.command(name="show")
+def show_cmd(
+    file: Path = typer.Argument(..., help="Path to the dataset file (CSV)."),
+    rows: int = typer.Option(10, "--rows", "-r", help="Number of rows to display."),
+    tail: bool = typer.Option(False, "--tail", help="Display last N rows instead of first N rows."),
+    columns: Optional[str] = typer.Option(
+        None,
+        "--columns",
+        "-c",
+        help="Comma-separated columns to display (e.g. age,salary,city).",
+    ),
+    all_rows: bool = typer.Option(False, "--all", help="Display all rows."),
+) -> None:
+    """Alias for `display` — show dataset rows in the terminal."""
+    _display_impl(file, rows, tail, columns, all_rows)
 
 
 if __name__ == "__main__":

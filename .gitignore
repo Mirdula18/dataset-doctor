@@ -1,5 +1,6 @@
 # Test artifacts and documentation examples
 test_artifacts/
+import_test/
 
 # Python
 __pycache__/

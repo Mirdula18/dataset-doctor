@@ -76,6 +76,10 @@ clean_df = dd.auto_fix(
     output_path="cleaned.csv",   # save to disk
     do_normalize=True,            # apply Min-Max scaling
 )
+
+# Preview rows/columns for quick inspection
+preview_df = dd.display_data("data.csv", rows=5)
+print(preview_df)
 ```
 
 ### Example diagnosis output
@@ -131,6 +135,12 @@ dataset-doctor clean data.csv --output cleaned.csv
 
 # Clean with normalization
 dataset-doctor clean data.csv --output cleaned.csv --normalize
+
+# Display first 10 rows (default)
+dataset-doctor display data.csv
+
+# Display selected columns and last 20 rows
+dataset-doctor show data.csv --tail --rows 20 --columns age,salary,city
 ```
 
 ---
@@ -145,6 +155,7 @@ dataset_doctor/
 ├── core/
 │   ├── analyzer.py          # Orchestrates all diagnosis modules
 │   ├── cleaner.py           # Orchestrates the cleaning pipeline
+│   ├── viewer.py            # Produces DataFrame views for display
 │   └── report.py            # DataQualityReport dataclass
 │
 ├── diagnosis/
