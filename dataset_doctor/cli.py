@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+import yaml
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
@@ -13,6 +14,7 @@ from rich.table import Table
 from dataset_doctor.core.analyzer import analyze
 from dataset_doctor.core.cleaner import clean
 from dataset_doctor.core.viewer import display_data
+from dataset_doctor.utils.config_loader import DEFAULT_CONFIG
 
 app = typer.Typer(
     name="dataset-doctor",
@@ -62,15 +64,47 @@ def clean_cmd(
     normalize: bool = typer.Option(
         False, "--normalize", "-n", help="Apply Min-Max normalization."
     ),
+    config: Optional[Path] = typer.Option(
+        None,
+        "--config",
+        "-c",
+        help="Path to YAML config file for cleaning behavior.",
+    ),
 ) -> None:
     """Run the automatic cleaning pipeline."""
     out = str(output) if output else None
-    df = clean(str(file), output_path=out, do_normalize=normalize)
+    config_value = str(config) if config else None
+    df = clean(str(file), output_path=out, do_normalize=normalize, config=config_value)
     console.print(f"[green]✔[/green] Cleaned dataset: {len(df)} rows, {len(df.columns)} columns")
     if output:
         console.print(f"[green]✔[/green] Saved to {output}")
     else:
         console.print("[dim]Tip: use --output cleaned.csv to save the result.[/dim]")
+
+
+@app.command(name="init-config")
+def init_config_cmd(
+    output: Path = typer.Argument(
+        Path("dataset_doctor_config.yaml"),
+        help="Where to write the default config YAML.",
+    ),
+    force: bool = typer.Option(
+        False,
+        "--force",
+        "-f",
+        help="Overwrite the config file if it already exists.",
+    ),
+) -> None:
+    """Generate a default dataset-doctor configuration YAML file."""
+    if output.exists() and not force:
+        raise typer.BadParameter(
+            f"Config file already exists: {output}. Use --force to overwrite."
+        )
+
+    with output.open("w", encoding="utf-8") as handle:
+        yaml.safe_dump(DEFAULT_CONFIG, handle, sort_keys=False)
+
+    console.print(f"[green]✔[/green] Wrote default config to {output}")
 
 
 def _display_impl(

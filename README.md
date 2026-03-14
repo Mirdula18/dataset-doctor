@@ -1,217 +1,300 @@
 # dataset-doctor
 
-**Automatically diagnose and clean messy datasets for machine learning and data science.**
+![PyPI](https://img.shields.io/pypi/v/dataset-doctor)
+![Python Versions](https://img.shields.io/pypi/pyversions/dataset-doctor)
+![License](https://img.shields.io/pypi/l/dataset-doctor)
+![CI](https://img.shields.io/github/actions/workflow/status/dataset-doctor/dataset-doctor/ci.yml?branch=main)
 
-`dataset-doctor` analyzes your data and detects common quality issues — missing values, duplicates, outliers, type mismatches, constant columns, and highly correlated features — then recommends (or automatically applies) fixes so you can get to modeling faster.
+Automatic dataset diagnosis and cleaning for machine learning and data science.
 
----
+## Project Overview
+
+dataset-doctor is an open-source Python package for detecting and fixing common data quality issues in tabular datasets.
+
+The project exists to reduce repetitive preprocessing work before feature engineering and model training. In many ML projects, teams lose time on the same recurring tasks: checking missing values, dropping duplicates, handling outliers, and standardizing numeric columns. dataset-doctor wraps these tasks into a clear diagnosis report and a configurable cleaning pipeline.
+
+This improves ML workflow reliability by making dataset checks explicit, reproducible, and easy to automate in scripts or CI pipelines.
 
 ## Features
 
-- **Missing-value detection** — counts and percentages per column
-- **Duplicate detection** — duplicate rows *and* duplicate columns
-- **Outlier detection** — IQR-based flagging for numeric columns
-- **Data-type checking** — finds string columns that should be numeric or datetime
-- **Correlation analysis** — flags highly correlated feature pairs (|r| ≥ 0.9)
-- **Constant-column detection** — identifies zero-variance columns
-- **Automatic cleaning pipeline** — one-call fix: dedup → fill → clip → drop → normalize
-- **Rich CLI** — terminal commands with formatted output
-- **Extensible architecture** — modular diagnosis and cleaning components
-
----
+- Multi-check dataset diagnosis with structured report output
+- Missing-value analysis and configurable imputation strategies
+- Duplicate row and duplicate column detection
+- Outlier detection and handling (IQR or z-score)
+- Constant-column removal
+- Optional normalization (min-max or standardization)
+- YAML-based preprocessing configuration
+- User-friendly command-line interface
+- Python API for notebook and pipeline integration
 
 ## Installation
+
+Install from PyPI:
 
 ```bash
 pip install dataset-doctor
 ```
 
-Or install from source:
+Install from source:
 
 ```bash
-git clone https://github.com/dataset-doctor/dataset-doctor.git
+git clone https://github.com/Mirdula18/dataset-doctor.git
 cd dataset-doctor
 pip install .
 ```
 
-For development:
+Development install:
 
 ```bash
 pip install -e ".[dev]"
 ```
 
----
+## Usage
 
-## Python Usage
+### CLI Usage
 
-### Diagnose a dataset
-
-```python
-import dataset_doctor as dd
-
-# From a file path
-report = dd.diagnose("data.csv")
-print(report.summary())
-
-# From a pandas DataFrame
-import pandas as pd
-
-df = pd.read_csv("data.csv")
-report = dd.diagnose(df)
-report.print_report()          # rich-formatted output
-print(report.to_dict())        # machine-readable dict
-```
-
-### Auto-fix a dataset
-
-```python
-import dataset_doctor as dd
-
-# Clean and get back a DataFrame
-clean_df = dd.auto_fix("data.csv")
-
-# Clean with options
-clean_df = dd.auto_fix(
-    "data.csv",
-    output_path="cleaned.csv",   # save to disk
-    do_normalize=True,            # apply Min-Max scaling
-)
-
-# Preview rows/columns for quick inspection
-preview_df = dd.display_data("data.csv", rows=5)
-print(preview_df)
-```
-
-### Example diagnosis output
-
-```
-## DATASET DIAGNOSIS REPORT
-
-Rows: 10,000
-Columns: 12
-
-### Issues Detected
-
-**Missing Values**
-  - age (12.0%)
-  - salary (4.0%)
-
-**Duplicate Rows**
-  - 18 rows
-
-**Outliers**
-  - transaction_amount (42 values)
-
-**Constant Columns**
-  - user_flag
-
-**Highly Correlated Columns**
-  - income vs salary (0.97)
-
-### Recommended Fixes
-
-  ✔ Fill missing values (median / mode)
-  ✔ Remove duplicate rows
-  ✔ Handle outliers (clip to IQR bounds)
-  ✔ Drop constant columns
-  ✔ Review or drop highly correlated features
-```
-
----
-
-## CLI Usage
-
-`dataset-doctor` ships with a command-line interface powered by [Typer](https://typer.tiangolo.com/) and [Rich](https://rich.readthedocs.io/).
+Diagnose:
 
 ```bash
-# Diagnose a dataset
 dataset-doctor diagnose data.csv
+```
 
-# Print the full report (alias for diagnose)
+Full report alias:
+
+```bash
 dataset-doctor report data.csv
+```
 
-# Clean a dataset
+Clean dataset:
+
+```bash
+dataset-doctor clean data.csv
+```
+
+Clean with output path:
+
+```bash
 dataset-doctor clean data.csv --output cleaned.csv
+```
 
-# Clean with normalization
-dataset-doctor clean data.csv --output cleaned.csv --normalize
+Clean with normalization:
 
-# Display first 10 rows (default)
-dataset-doctor display data.csv
+```bash
+dataset-doctor clean data.csv --normalize
+```
 
-# Display selected columns and last 20 rows
+Clean with config:
+
+```bash
+dataset-doctor clean data.csv --config dataset_doctor_config.yaml
+```
+
+Generate default config file:
+
+```bash
+dataset-doctor init-config
+```
+
+Display rows:
+
+```bash
+dataset-doctor display data.csv --rows 10
+```
+
+Show rows (alias):
+
+```bash
 dataset-doctor show data.csv --tail --rows 20 --columns age,salary,city
 ```
 
----
+### Python API
 
-## Architecture
+```python
+import dataset_doctor as dd
 
+# Diagnose a dataset
+report = dd.diagnose("data.csv")
+print(report.summary())
+
+# Auto-clean with defaults
+clean_df = dd.auto_fix("data.csv")
+
+# Auto-clean with options
+clean_df = dd.auto_fix(
+    "data.csv",
+    output_path="cleaned.csv",
+    do_normalize=True,
+)
+
+# Auto-clean with YAML config
+clean_df = dd.auto_fix("data.csv", config="dataset_doctor_config.yaml")
+
+# Display data preview
+preview = dd.display_data("data.csv", rows=5)
+print(preview)
 ```
-dataset_doctor/
-├── __init__.py              # Public API: diagnose(), auto_fix()
-├── cli.py                   # Typer CLI application
-│
-├── core/
-│   ├── analyzer.py          # Orchestrates all diagnosis modules
-│   ├── cleaner.py           # Orchestrates the cleaning pipeline
-│   ├── viewer.py            # Produces DataFrame views for display
-│   └── report.py            # DataQualityReport dataclass
-│
-├── diagnosis/
-│   ├── missing_values.py    # Missing-value detection
-│   ├── duplicates.py        # Duplicate row & column detection
-│   ├── outliers.py          # IQR-based outlier detection
-│   ├── datatype_checker.py  # Dtype mismatch detection
-│   ├── correlation_checker.py  # High-correlation detection
-│   └── constant_columns.py  # Constant-column detection
-│
-├── cleaning/
-│   ├── fill_missing.py      # Median / mode imputation
-│   ├── remove_duplicates.py # Drop duplicate rows
-│   ├── normalize.py         # Min-Max scaling
-│   ├── outlier_handler.py   # IQR clipping
-│   └── drop_constant.py     # Drop zero-variance columns
-│
-└── utils/
-    ├── dataframe_loader.py  # CSV / DataFrame input handling
-    └── logging.py           # Logging configuration
-```
-
-**Design principles:**
-
-| Principle | How it's applied |
-|-----------|-----------------|
-| Single Responsibility | Each diagnosis / cleaning task is its own module |
-| Open/Closed | Add new checks by creating a module — no existing code changes |
-| Dependency Inversion | Core engines depend on abstractions, not concrete I/O |
-| Vectorized ops | All pandas operations avoid Python-level loops |
-
----
-
-## Development
 
 ```bash
-# Run tests
-pytest
+import dataset_doctor as dd
 
-# Run with coverage
+dd.diagnose("data.csv")
+dd.auto_fix("data.csv")
+dd.auto_fix("data.csv", output_path="cleaned.csv")
+dd.auto_fix("data.csv", output="cleaned.csv")
+dd.auto_fix("data.csv", do_normalize=True)
+dd.auto_fix("data.csv", return_scaler=True)
+dd.auto_fix("data.csv", config="dataset_doctor_config.yaml")
+dd.auto_fix("data.csv", config={"missing_values": {"numeric_strategy": "mean"}})
+dd.display_data("data.csv")
+dd.display_data("data.csv", rows=10)
+dd.display_data("data.csv", tail=True)
+dd.display_data("data.csv", columns=["col1", "col2"])
+dd.display_data("data.csv", all_rows=True)
+
+report = dd.diagnose("data.csv")
+report.summary()
+report.to_dict()
+report.print_report()
+```
+
+## Architecture Overview
+
+High-level package structure:
+
+```text
+dataset_doctor/
+  diagnosis/
+  cleaning/
+  core/
+  utils/
+```
+
+Responsibilities:
+
+- diagnosis
+  - Contains issue detectors (missing values, duplicates, outliers, data types, correlations, constant columns).
+- cleaning
+  - Contains data-fixing transforms (imputation, duplicate removal, outlier handling, normalization, constant-column dropping).
+- core
+  - Orchestrates diagnosis and cleaning workflows, assembles report output, and exposes end-user pipeline behavior.
+- utils
+  - Shared helpers for logging, DataFrame loading, and YAML configuration loading/validation.
+
+## Configuration System
+
+dataset-doctor supports YAML-based configuration to control preprocessing behavior without code changes.
+
+Generate default config:
+
+```bash
+dataset-doctor init-config
+```
+
+Use config from CLI:
+
+```bash
+dataset-doctor clean data.csv --config dataset_doctor_config.yaml
+```
+
+Use config from Python:
+
+```python
+import dataset_doctor as dd
+
+clean_df = dd.auto_fix("data.csv", config="dataset_doctor_config.yaml")
+```
+
+Example configuration:
+
+```yaml
+missing_values:
+  numeric_strategy: median
+  categorical_strategy: mode
+  max_missing_threshold: 0.4
+
+duplicates:
+  remove: true
+
+outliers:
+  method: iqr
+  action: clip
+
+normalization:
+  method: minmax
+  range: [0, 1]
+
+feature_selection:
+  remove_constant_columns: true
+  correlation_threshold: 0.9
+
+logging:
+  verbosity: medium
+```
+
+## Example Workflow
+
+Typical ML data preparation flow:
+
+1. Collect raw dataset
+2. Run diagnosis with dataset-doctor
+3. Review summary and issue categories
+4. Auto-clean with defaults or custom YAML config
+5. Export cleaned dataset
+6. Train and evaluate ML model
+
+```text
+raw_data.csv -> diagnose -> report -> auto_fix(config) -> cleaned_data.csv -> model training
+```
+
+## Contributing
+
+Contributions are welcome.
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with tests and documentation updates
+4. Open a pull request with a clear description of scope and rationale
+
+Please keep pull requests focused and include reproducible examples for bug fixes.
+
+## Development Setup
+
+Editable install with dev extras:
+
+```bash
+pip install -e ".[dev]"
+```
+
+Alternative workflow if your fork includes a dev requirements file:
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+## Running Tests
+
+Run all tests:
+
+```bash
+pytest
+```
+
+Run with coverage:
+
+```bash
 pytest --cov=dataset_doctor
 ```
 
----
+## Roadmap
 
-## Requirements
+Planned and potential enhancements:
 
-- Python ≥ 3.9
-- pandas ≥ 1.5
-- numpy ≥ 1.23
-- scikit-learn ≥ 1.1
-- rich ≥ 12.0
-- typer ≥ 0.9
-
----
+- HTML diagnosis reports for sharing and archival
+- Feature engineering helpers (encoding and transformations)
+- Dataset health scoring framework
+- Visualization dashboard for issue exploration
+- Extended schema and expectation checks
 
 ## License
 
-MIT — see [LICENSE](LICENSE) for details.
+MIT License. See LICENSE for full text.
