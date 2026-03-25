@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dataset-doctor"
-version = "0.1.2"
+version = "1.0.0"
 description = "Automatically diagnose and clean messy datasets for machine learning and data science."
 readme = {file = "README_PYPI.md", content-type = "text/markdown"}
 license = {text = "MIT"}
