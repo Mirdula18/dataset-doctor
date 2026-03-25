@@ -43,9 +43,9 @@ dev = [
 dataset-doctor = "dataset_doctor.cli:app"
 
 [project.urls]
-Homepage = "https://github.com/dataset-doctor/dataset-doctor"
-Repository = "https://github.com/dataset-doctor/dataset-doctor"
-Issues = "https://github.com/dataset-doctor/dataset-doctor/issues"
+Homepage = "https://github.com/Mirdula18/dataset-doctor"
+Repository = "https://github.com/Mirdula18/dataset-doctor"
+Issues = "https://github.com/Mirdula18/dataset-doctor/issues"
 
 [tool.setuptools.packages.find]
 include = ["dataset_doctor*"]
